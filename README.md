@@ -1,58 +1,88 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Kaon Ta! Davao Civiles's Food Guide
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Author:** Christian Civiles  
+**Course:** 4-334 CS Elective 2 — Full-Stack Development (Laravel)  
+**Repository:** `PrefinalProject-Civiles-KaonTaDavao`
 
-## About Laravel
+A public Laravel 12 and SQLite web directory for the Davao City Tourism Office that catalogs carinderias and local eateries by district, tracks business permits, showcases dishes and amenities, and collects resident reviews.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Setup Instructions
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Run the following commands on a fresh clone to install dependencies, initialize SQLite, seed the database, compile Vite assets, and start the local server:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate:fresh --seed
+npm install
+npm run build
+php artisan serve
+# or npm run dev while developing
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## Personalized Seed Data
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Item | Value |
+| :--- | :--- |
+| **Districts (6)** | `Poblacion`, `Talomo`, `Agdao`, `Buhangin`, `Toril`, `Calinan` |
+| **Features (6)** | `Suki ni Civiles`, `Budget Meal`, `Halal`, `Open 24 Hours`, `Aircon`, `Wi-Fi Available` |
+| **Seeded User 1** | `Christian Civiles` (`civiles@kaonta.test` / password: `kaonta2026`) |
+| **Seeded User 2** | `Tita Civiles` (`tita.civiles@kaonta.test` / password: `kaonta2026`) |
+| **Hand-Made Eatery** | `Carinderia ni Civiles` (slug: `carinderia-ni-civiles`, District: `Poblacion`, Address: `San Pedro St., Poblacion, Davao City`, Price Range: `budget`, Specialty: `Tinolang Manok`) |
+| **Eatery Features** | `Suki ni Civiles`, `Budget Meal` |
+| **Business Permit** | `DVO-2026-0915` (Expires: `2027-09-15`) |
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Eloquent Relationships
 
-## Security Vulnerabilities
+| Relationship | Type (Both Directions) | Why This Relationship Fits |
+| :--- | :--- | :--- |
+| **District ↔ Eatery** | `hasMany` / `belongsTo` | One Davao City district contains many local eateries, while each eatery is located in a single district via `district_id`. |
+| **Eatery ↔ Dish** | `hasMany` / `belongsTo` | An eatery serves multiple menu dishes, and every dish belongs exclusively to the eatery that prepares it. |
+| **Eatery ↔ Review** | `hasMany` / `belongsTo` | Residents can submit many reviews for a single eatery, while each review evaluates one specific eatery. |
+| **User ↔ Review** | `hasMany` / `belongsTo` | One resident user can write multiple reviews across different eateries, and each review is authored by a single user. |
+| **Eatery ↔ Permit** | `hasOne` / `belongsTo` | Each eatery is issued exactly one unique business permit record (`eatery_id` unique), and every permit belongs to one eatery. |
+| **Eatery ↔ Feature** | `belongsToMany` / `belongsToMany` (pivot: `eatery_feature`) | An eatery can offer several amenities (such as Halal or Aircon) at once, and each feature tag applies to many eateries across the city. |
+| **District → Review** | `hasManyThrough` (via `Eatery`) | Reviews do not store `district_id` directly, so `hasManyThrough` lets a district aggregate and count all reviews belonging to its eateries in one query path. |
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## Route List (`php artisan route:list --except-vendor`)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```text
+  GET|HEAD        / ................................................................................................................................ home › HomeController
+  GET|HEAD        districts ................................................................................................... districts.index › DistrictController@index
+  GET|HEAD        districts/{district} .......................................................................................... districts.show › DistrictController@show
+  GET|HEAD        eateries ....................................................................................................... eateries.index › EateryController@index
+  POST            eateries ....................................................................................................... eateries.store › EateryController@store
+  GET|HEAD        eateries/create .............................................................................................. eateries.create › EateryController@create
+  GET|HEAD        eateries/{eatery} ................................................................................................ eateries.show › EateryController@show
+  PUT|PATCH       eateries/{eatery} ............................................................................................ eateries.update › EateryController@update
+  DELETE          eateries/{eatery} .......................................................................................... eateries.destroy › EateryController@destroy
+  GET|HEAD        eateries/{eatery}/edit ........................................................................................... eateries.edit › EateryController@edit
+  POST            eateries/{eatery}/reviews .............................................................................. eateries.reviews.store › ReviewController@store
+  GET|HEAD        reviewers/{user} .............................................................................................. reviewers.show › ReviewerController@show
+  DELETE          reviews/{review} ............................................................................................ reviews.destroy › ReviewController@destroy
+
+                                                                                                                                                       Showing [13] routes
+```
+
+---
+
+## Screenshots
+
+### 1. Eatery List (`/eateries`)
+![Eatery List](screenshots/eatery-list.png)
+
+### 2. Eatery Details & Reviews (`/eateries/carinderia-ni-civiles`)
+![Eatery Page with Reviews](screenshots/eatery-show.png)
+
+### 3. Create Eatery Form with Validation Errors (`/eateries/create`)
+![Create Form Validation Errors](screenshots/create-errors.png)
